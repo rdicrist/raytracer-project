@@ -322,121 +322,136 @@ void mouseMove(GLFWwindow* window, double x, double y){
 /* -------------------------------------------------------------------------- */
 void initScene(){
   cameraPosition = point4( 0.0, 0.0, 6.0, 1.0 );
-  lightPosition = point4( 0.0, 1.5, 0.0, 1.0 );
+  lightPosition = point4( 0.0, 4.0, 0.0, 1.0 );
   lightColor = color4( 1.0, 1.0, 1.0, 1.0);
   
-  { //Back Wall
-    sceneObjects.push_back(new Square("Back Wall"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
-  }
-  
-  { //Left Wall
-    sceneObjects.push_back(new Square("Left Wall"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
-  }
-  
-  { //Right Wall
-    sceneObjects.push_back(new Square("Right Wall"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(0.5,0.0,0.5,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0 ));
-  }
-  
-  { //Floor
-    sceneObjects.push_back(new Square("Floor"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-  }
-  
-  { //Ceiling
-    sceneObjects.push_back(new Square("Ceiling"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-  }
-  
-  { //Front Wall
-    sceneObjects.push_back(new Square("Front Wall"));
-    Object::ShadingValues _shadingValues;
-    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-    _shadingValues.Ka = 0.0;
-    _shadingValues.Kd = 1.0;
-    _shadingValues.Ks = 0.0;
-    _shadingValues.Kn = 16.0;
-    _shadingValues.Kt = 0.0;
-    _shadingValues.Kr = 0.0;
-    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(180)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-  }
-  
-  
   {
-  sceneObjects.push_back(new Sphere("Glass sphere"));
-  Object::ShadingValues _shadingValues;
-  _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
-  _shadingValues.Ka = 0.0;
-  _shadingValues.Kd = 0.0;
-  _shadingValues.Ks = 0.0;
-  _shadingValues.Kn = 16.0;
-  _shadingValues.Kt = 1.0;
-  _shadingValues.Kr = 1.4;
-  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(1.0, -1.25, 0.5)*Scale(0.75, 0.75, 0.75));
-  }
-  
-  {
-  sceneObjects.push_back(new Sphere("Mirrored Sphere"));
+  sceneObjects.push_back(new Sphere("Sphere"));
   Object::ShadingValues _shadingValues;
   _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
   _shadingValues.Ka = 0.0;
-  _shadingValues.Kd = 0.0;
-  _shadingValues.Ks = 1.0;
-  _shadingValues.Kn = 16.0;
+  _shadingValues.Kd = 1.0;
+  _shadingValues.Ks = 0.0;
+  _shadingValues.Kn = 0.0;
   _shadingValues.Kt = 0.0;
   _shadingValues.Kr = 0.0;
   sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(-1.0, -1.25, -1.0)*Scale(0.75, 0.75, 0.75));
+  sceneObjects[sceneObjects.size()-1]->setModelView(mat4());
   }
+
+  
+//  { //Back Wall
+//    sceneObjects.push_back(new Square("Back Wall"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
+//  }
+//  
+//  { //Left Wall
+//    sceneObjects.push_back(new Square("Left Wall"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
+//  }
+//  
+//  { //Right Wall
+//    sceneObjects.push_back(new Square("Right Wall"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(0.5,0.0,0.5,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0 ));
+//  }
+//  
+//  { //Floor
+//    sceneObjects.push_back(new Square("Floor"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+//  }
+//  
+//  { //Ceiling
+//    sceneObjects.push_back(new Square("Ceiling"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+//  }
+//  
+//  { //Front Wall
+//    sceneObjects.push_back(new Square("Front Wall"));
+//    Object::ShadingValues _shadingValues;
+//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+//    _shadingValues.Ka = 0.0;
+//    _shadingValues.Kd = 1.0;
+//    _shadingValues.Ks = 0.0;
+//    _shadingValues.Kn = 16.0;
+//    _shadingValues.Kt = 0.0;
+//    _shadingValues.Kr = 0.0;
+//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(180)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+//  }
+//  
+//  
+//  {
+//  sceneObjects.push_back(new Sphere("Glass sphere"));
+//  Object::ShadingValues _shadingValues;
+//  _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
+//  _shadingValues.Ka = 0.0;
+//  _shadingValues.Kd = 0.0;
+//  _shadingValues.Ks = 0.0;
+//  _shadingValues.Kn = 16.0;
+//  _shadingValues.Kt = 1.0;
+//  _shadingValues.Kr = 1.4;
+//  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(1.0, -1.25, 0.5)*Scale(0.75, 0.75, 0.75));
+//  }
+//  
+//  {
+//  sceneObjects.push_back(new Sphere("Mirrored Sphere"));
+//  Object::ShadingValues _shadingValues;
+//  _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+//  _shadingValues.Ka = 0.0;
+//  _shadingValues.Kd = 0.0;
+//  _shadingValues.Ks = 1.0;
+//  _shadingValues.Kn = 16.0;
+//  _shadingValues.Kt = 0.0;
+//  _shadingValues.Kr = 0.0;
+//  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+//  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(-1.0, -1.25, -1.0)*Scale(0.75, 0.75, 0.75));
+//  }
 }
 
 /* -------------------------------------------------------------------------- */
