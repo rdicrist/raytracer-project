@@ -38,13 +38,13 @@ public:
     double t_o;
     //t in world
     double t_w;
-    //p in object space
+    //intersection point in object space
     vec4 P_o;
-    //p in world space
+    //intersection point in world space
     vec4 P_w;
-    //Normal in object space
+    //normal at intersection in object space
     vec3 N_o;
-    //Normal in world space
+    //normal at intersection  in world space
     vec3 N_w;
     //The object hit
     Object *object;
@@ -91,8 +91,8 @@ public:
   Sphere(std::string name) : Object(name) { mesh.makeSubdivisionSphere(8); };
   
   /* ------------------------------------------------------------------------ */
-  /* ------------------- Intersect Ray = p0+w + t*V_w  ---------------------- */
-  virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w){
+  /* ------------------- Intersect Ray = R_w + t*dir_w  ---------------------- */
+  virtual IntersectionValues intersect(vec4 R_w, vec4 dir_w){
     IntersectionValues result;
     result.object = this;
     //TODO FOR PROJECT
@@ -100,8 +100,8 @@ public:
   }
   
   /* ------------------------------------------------------------------------ */
-  /* ----- Ray = p0 + t*V  sphere at origin O and radius r    : Find t ------ */
-  double sphereIntersect(vec4 p0, vec4 V, vec4 O=vec4(0.0, 0.0, 0.0, 1.0), double r=1.0){
+  /* ----Ray = R_o + t*dir_o  sphere at origin O and radius r : Find t ------ */
+  double sphereIntersect(vec4 R_o, vec4 dir_o, vec4 O=vec4(0.0, 0.0, 0.0, 1.0), double r=1.0){
     //TODO FOR PROJECT
     return std::numeric_limits< double >::infinity();
   }
@@ -141,8 +141,8 @@ public:
   };
   
   /* ------------------------------------------------------------------------ */
-  /* -------------------- Ray = p0 + t*V  with square ----------------------- */
-  virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w){
+  /* -------------------- Ray = R_w + t_w*dir_w  with square ---------------- */
+  virtual IntersectionValues intersect(vec4 R_w, vec4 dir_w){
     IntersectionValues result;
     result.object = this;
     //TODO FOR PROJECT
@@ -150,8 +150,8 @@ public:
   }
   
   /* ------------------------------------------------------------------------ */
-  /* ----------------- Ray = p0 + t*V  with square: Find t ------------------ */
-  double squareIntersect(vec4 p0, vec4 V){
+  /* ----------------- Ray = R_o + t_o*dir_o with square: Find t ------------ */
+  double squareIntersect(vec4 R_o, vec4 dir_o){
     //TODO FOR PROJECT
     return std::numeric_limits< double >::infinity();
   }
