@@ -46,8 +46,8 @@ public:
     vec3 N_o;
     //Normal in world space
     vec3 N_w;
-    int ID_;
-    std::string name;
+    //The object hit
+    Object *object;
   } IntersectionValues;
   
   
@@ -94,7 +94,7 @@ public:
   /* ------------------- Intersect Ray = p0+w + t*V_w  ---------------------- */
   virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w){
     IntersectionValues result;
-    result.name = name;
+    result.object = this;
     //TODO FOR PROJECT
     return result;
   }
@@ -144,7 +144,7 @@ public:
   /* -------------------- Ray = p0 + t*V  with square ----------------------- */
   virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w){
     IntersectionValues result;
-    result.name = name;
+    result.object = this;
     //TODO FOR PROJECT
     return result;
   }
