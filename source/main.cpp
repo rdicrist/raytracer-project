@@ -201,7 +201,7 @@ bool shadowFeeler(vec4 p0, Object *object){
 /* -------------------------------------------------------------------------- */
 /* ----------  cast Ray = p0 + t*dir and intersect with scene       --------- */
 /* -------------------------------------------------------------------------- */
-vec4 castRay(vec4 p0, vec3 E, Object *lastHitObject, int depth){
+vec4 castRay(vec4 p0, vec4 dir, Object *lastHitObject, int depth){
   vec4 color = vec4(0.0,0.0,0.0,0.0);
   
   if(depth > maxDepth){ return color; }
@@ -222,7 +222,7 @@ void rayTrace(){
       
       int idx = j*GLState::window_width+i;
       std::vector < vec4 > ray_o_dir = findRay(i,j);
-      vec4 color = castRay(ray_o_dir[0], vec3(ray_o_dir[1].x, ray_o_dir[1].y, ray_o_dir[1].z), NULL, 0);
+      vec4 color = castRay(ray_o_dir[0], ray_o_dir[1], NULL, 0);
       buffer[4*idx]   = color.x*255;
       buffer[4*idx+1] = color.y*255;
       buffer[4*idx+2] = color.z*255;
