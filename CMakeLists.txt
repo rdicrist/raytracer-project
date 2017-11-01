@@ -28,7 +28,7 @@ include_directories(${CMAKE_SOURCE_DIR}/source/common
 					
 add_executable(raytracer WIN32 MACOSX_BUNDLE 
 	source/main.cpp 
-	source/common/Angel.h
+	source/common/common.h
 	source/common/CheckError.h
 	source/common/mat.h
 	source/common/ObjMesh.cpp

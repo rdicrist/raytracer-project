@@ -1,21 +1,22 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+//////////////////////////////////////////////////////////////////////////////
+//
+//  --- main.cpp ---
+//  Created by Brian Summa
+//
+//////////////////////////////////////////////////////////////////////////////
 
-#include "Angel.h"
+#include "common.h"
 #include "SourcePath.h"
-#include "Trackball.h"
-#include "ObjMesh.h"
-#include "Object.h"
-
-#include <algorithm>
-#include "pngenc.h"
 
 using namespace Angel;
 
 typedef vec4  color4;
 typedef vec4  point4;
 
+
 //Scene variables
+enum{_SPHERE, _SQUARE, _BOX};
+int scene = _BOX; //Simple sphere, square or cornell box
 std::vector < Object * > sceneObjects;
 point4 lightPosition;
 color4 lightColor;
@@ -31,7 +32,7 @@ namespace GLState {
   
   std::vector < GLuint > objectVao;
   std::vector < GLuint > objectBuffer;
-
+  
   GLuint vPosition, vNormal, vTexCoord;
   
   GLuint program;
@@ -76,9 +77,9 @@ private:
   
 public:
   rayTraceReceptor(const unsigned char *use_buffer,
-    unsigned int width,
-    unsigned int height,
-    int channels){
+                   unsigned int width,
+                   unsigned int height,
+                   int channels){
     this->buffer = use_buffer;
     this->width = width;
     this->height = height;
@@ -91,14 +92,14 @@ public:
     header.bit_depth = 8;
     switch (channels)
     {
-    case 1:
-        header.color_type = cmps3120::PNG_GRAYSCALE;break;
-    case 2:
-        header.color_type = cmps3120::PNG_GRAYSCALE_ALPHA;break;
-    case 3:
-        header.color_type = cmps3120::PNG_RGB;break;
-    default:
-        header.color_type = cmps3120::PNG_RGBA;break;
+      case 1:
+      header.color_type = cmps3120::PNG_GRAYSCALE;break;
+      case 2:
+      header.color_type = cmps3120::PNG_GRAYSCALE_ALPHA;break;
+      case 3:
+      header.color_type = cmps3120::PNG_RGB;break;
+      default:
+      header.color_type = cmps3120::PNG_RGBA;break;
     }
     return header;
   }
@@ -140,31 +141,29 @@ std::vector < vec4 > findRay(GLdouble x, GLdouble y){
   
   int viewport[4];
   glGetIntegerv(GL_VIEWPORT, viewport);
-
-    GLdouble modelViewMatrix[16];
-    GLdouble projectionMatrix[16];
-    for(unsigned int i=0; i < 4; i++){
-      for(unsigned int j=0; j < 4; j++){
-        modelViewMatrix[j*4+i]  =  GLState::sceneModelView[i][j];
-        projectionMatrix[j*4+i] =  GLState::projection[i][j];
-      }
+  
+  GLdouble modelViewMatrix[16];
+  GLdouble projectionMatrix[16];
+  for(unsigned int i=0; i < 4; i++){
+    for(unsigned int j=0; j < 4; j++){
+      modelViewMatrix[j*4+i]  =  GLState::sceneModelView[i][j];
+      projectionMatrix[j*4+i] =  GLState::projection[i][j];
     }
-
+  }
+  
   
   GLdouble nearPlaneLocation[3];
   _gluUnProject(x, y, 0.0, modelViewMatrix, projectionMatrix,
-               viewport, &nearPlaneLocation[0], &nearPlaneLocation[1],
-               &nearPlaneLocation[2]);
+                viewport, &nearPlaneLocation[0], &nearPlaneLocation[1],
+                &nearPlaneLocation[2]);
   
   GLdouble farPlaneLocation[3];
   _gluUnProject(x, y, 1.0, modelViewMatrix, projectionMatrix,
-               viewport, &farPlaneLocation[0], &farPlaneLocation[1],
-               &farPlaneLocation[2]);
+                viewport, &farPlaneLocation[0], &farPlaneLocation[1],
+                &farPlaneLocation[2]);
   
   
-  vec4 ray_origin = vec4(nearPlaneLocation[0],
-                         nearPlaneLocation[1],
-                         nearPlaneLocation[2], 1.0);
+  vec4 ray_origin = vec4(nearPlaneLocation[0], nearPlaneLocation[1], nearPlaneLocation[2], 1.0);
   vec3 temp = vec3(farPlaneLocation[0]-nearPlaneLocation[0],
                    farPlaneLocation[1]-nearPlaneLocation[1],
                    farPlaneLocation[2]-nearPlaneLocation[2]);
@@ -186,26 +185,49 @@ bool intersectionSort(Object::IntersectionValues i, Object::IntersectionValues j
 
 /* -------------------------------------------------------------------------- */
 /* ---------  Some debugging code: cast Ray = p0 + t*dir  ------------------- */
-/* ---------  and print out what it hits                  ------------------- */
+/* ---------  and print out what it hits =                ------------------- */
 void castRayDebug(vec4 p0, vec4 dir){
-  //OPTIONAL TODO FOR PROJECT
+  
+  std::vector < Object::IntersectionValues > intersections;
+  
+  for(unsigned int i=0; i < sceneObjects.size(); i++){
+    intersections.push_back(sceneObjects[i]->intersect(p0, dir));
+    intersections[intersections.size()-1].ID_ = i;
+  }
+  
+  for(unsigned int i=0; i < intersections.size(); i++){
+    if(intersections[i].t_w != std::numeric_limits< double >::infinity()){
+      std::cout << "Hit " << intersections[i].name << " " << intersections[i].ID_ << "\n";
+      std::cout << "P: " <<  intersections[0].P_w << "\n";
+      std::cout << "N: " <<  intersections[0].N_w << "\n";
+      vec4 L = lightPosition-intersections[0].P_w;
+      L  = normalize(L);
+      std::cout << "L: " << L << "\n";
+    }
+  }
+  
 }
 
 /* -------------------------------------------------------------------------- */
 bool shadowFeeler(vec4 p0, Object *object){
   bool inShadow = false;
-  //TODO FOR PROJECT
+  
+  //TODO: Shadow code here
+  
   return inShadow;
 }
 
 /* -------------------------------------------------------------------------- */
-/* ----------  cast Ray = p0 + t*dir and intersect with scene       --------- */
-/* -------------------------------------------------------------------------- */
-vec4 castRay(vec4 p0, vec4 dir, Object *lastHitObject, int depth){
+/* ----------  cast Ray = p0 + t*dir and intersect with sphere      --------- */
+/* ----------  return color, right now shading is approx based      --------- */
+/* ----------  depth                                                --------- */
+vec4 castRay(vec4 p0, vec4 E, Object *lastHitObject, int depth){
   vec4 color = vec4(0.0,0.0,0.0,0.0);
   
   if(depth > maxDepth){ return color; }
-  //TODO FOR PROJECT
+  
+  //TODO: Raytracing code here
+  
   return color;
   
 }
@@ -222,7 +244,7 @@ void rayTrace(){
       
       int idx = j*GLState::window_width+i;
       std::vector < vec4 > ray_o_dir = findRay(i,j);
-      vec4 color = castRay(ray_o_dir[0], ray_o_dir[1], NULL, 0);
+      vec4 color = castRay(ray_o_dir[0], vec4(ray_o_dir[1].x, ray_o_dir[1].y, ray_o_dir[1].z,0.0), NULL, 0);
       buffer[4*idx]   = color.x*255;
       buffer[4*idx+1] = color.y*255;
       buffer[4*idx+2] = color.z*255;
@@ -244,10 +266,197 @@ static void error_callback(int error, const char* description)
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+void initCornellBox(){
+  cameraPosition = point4( 0.0, 0.0, 6.0, 1.0 );
+  lightPosition = point4( 0.0, 1.5, 0.0, 1.0 );
+  lightColor = color4( 1.0, 1.0, 1.0, 1.0);
+  
+  sceneObjects.clear();
+  
+  { //Back Wall
+    sceneObjects.push_back(new Square("Back Wall"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
+  }
+  
+  { //Left Wall
+    sceneObjects.push_back(new Square("Left Wall"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
+  }
+  
+  { //Right Wall
+    sceneObjects.push_back(new Square("Right Wall"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(0.5,0.0,0.5,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0 ));
+  }
+  
+  { //Floor
+    sceneObjects.push_back(new Square("Floor"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+  }
+  
+  { //Ceiling
+    sceneObjects.push_back(new Square("Ceiling"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+  }
+  
+  { //Front Wall
+    sceneObjects.push_back(new Square("Front Wall"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(180)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
+  }
+  
+  
+  {
+  sceneObjects.push_back(new Sphere("Glass sphere"));
+  Object::ShadingValues _shadingValues;
+  _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
+  _shadingValues.Ka = 0.0;
+  _shadingValues.Kd = 0.0;
+  _shadingValues.Ks = 0.0;
+  _shadingValues.Kn = 16.0;
+  _shadingValues.Kt = 1.0;
+  _shadingValues.Kr = 1.4;
+  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(1.0, -1.25, 0.5)*Scale(0.75, 0.75, 0.75));
+  }
+  
+  {
+  sceneObjects.push_back(new Sphere("Mirrored Sphere"));
+  Object::ShadingValues _shadingValues;
+  _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+  _shadingValues.Ka = 0.0;
+  _shadingValues.Kd = 0.0;
+  _shadingValues.Ks = 1.0;
+  _shadingValues.Kn = 16.0;
+  _shadingValues.Kt = 0.0;
+  _shadingValues.Kr = 0.0;
+  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(-1.0, -1.25, -1.0)*Scale(0.75, 0.75, 0.75));
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+void initUnitSphere(){
+  cameraPosition = point4( 0.0, 0.0, 3.0, 1.0 );
+  lightPosition = point4( 0.0, 0.0, 4.0, 1.0 );
+  lightColor = color4( 1.0, 1.0, 1.0, 1.0);
+  
+  sceneObjects.clear();
+  
+  {
+  sceneObjects.push_back(new Sphere("Diffuse sphere"));
+  Object::ShadingValues _shadingValues;
+  _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+  _shadingValues.Ka = 0.0;
+  _shadingValues.Kd = 1.0;
+  _shadingValues.Ks = 0.0;
+  _shadingValues.Kn = 16.0;
+  _shadingValues.Kt = 0.0;
+  _shadingValues.Kr = 0.0;
+  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+  sceneObjects[sceneObjects.size()-1]->setModelView(mat4());
+  }
+  
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+void initUnitSquare(){
+  cameraPosition = point4( 0.0, 0.0, 3.0, 1.0 );
+  lightPosition = point4( 0.0, 0.0, 4.0, 1.0 );
+  lightColor = color4( 1.0, 1.0, 1.0, 1.0);
+  
+  sceneObjects.clear();
+  
+  { //Back Wall
+    sceneObjects.push_back(new Square("Unit Square"));
+    Object::ShadingValues _shadingValues;
+    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
+    _shadingValues.Ka = 0.0;
+    _shadingValues.Kd = 1.0;
+    _shadingValues.Ks = 0.0;
+    _shadingValues.Kn = 16.0;
+    _shadingValues.Kt = 0.0;
+    _shadingValues.Kr = 0.0;
+    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
+    sceneObjects[sceneObjects.size()-1]->setModelView(mat4());
+  }
+  
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GLFW_TRUE);
+  if (key == GLFW_KEY_1 && action == GLFW_PRESS){
+    scene = _SPHERE;
+    initUnitSphere();
+  }
+  if (key == GLFW_KEY_2 && action == GLFW_PRESS){
+    scene = _SQUARE;
+    initUnitSquare();
+  }
+  if (key == GLFW_KEY_3 && action == GLFW_PRESS){
+    scene = _BOX;
+    initCornellBox();
+  }
   if (key == GLFW_KEY_R && action == GLFW_PRESS)
     rayTrace();
 }
@@ -267,12 +476,16 @@ static void mouseClick(GLFWwindow* window, int button, int action, int mods){
     GLState::panning=true;
   }else{
     GLState::moving=true;
-    trackball(GLState::lastquat, 0, 0, 0, 0);
+    TrackBall::trackball(GLState::lastquat, 0, 0, 0, 0);
   }
   
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
   GLState::beginx = xpos; GLState::beginy = ypos;
+  
+  std::vector < vec4 > ray_o_dir = findRay(xpos, ypos);
+  castRayDebug(ray_o_dir[0], vec4(ray_o_dir[1].x, ray_o_dir[1].y, ray_o_dir[1].z,0.0));
+  
 }
 
 /* -------------------------------------------------------------------------- */
@@ -281,7 +494,7 @@ void mouseMove(GLFWwindow* window, double x, double y){
   
   int W, H;
   glfwGetFramebufferSize(window, &W, &H);
-
+  
   
   float dx=(x-GLState::beginx)/(float)W;
   float dy=(GLState::beginy-y)/(float)H;
@@ -303,155 +516,19 @@ void mouseMove(GLFWwindow* window, double x, double y){
     }
   else if (GLState::moving)
     {
-    trackball(GLState::lastquat,
-              (2.0f * GLState::beginx - W) / W,
-              (H - 2.0f * GLState::beginy) / H,
-              (2.0f * x - W) / W,
-              (H - 2.0f * y) / H
-              );
+    TrackBall::trackball(GLState::lastquat,
+                         (2.0f * GLState::beginx - W) / W,
+                         (H - 2.0f * GLState::beginy) / H,
+                         (2.0f * x - W) / W,
+                         (H - 2.0f * y) / H
+                         );
     
-    add_quats(GLState::lastquat, GLState::curquat, GLState::curquat);
-    build_rotmatrix(GLState::curmat, GLState::curquat);
+    TrackBall::add_quats(GLState::lastquat, GLState::curquat, GLState::curquat);
+    TrackBall::build_rotmatrix(GLState::curmat, GLState::curquat);
     
     GLState::beginx = x;GLState::beginy = y;
     return;
     }
-}
-
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-void initScene(){
-  cameraPosition = point4( 0.0, 0.0, 6.0, 1.0 );
-  lightPosition = point4( 0.0, 4.0, 0.0, 1.0 );
-  lightColor = color4( 1.0, 1.0, 1.0, 1.0);
-  
-  {
-  sceneObjects.push_back(new Sphere("Sphere"));
-  Object::ShadingValues _shadingValues;
-  _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-  _shadingValues.Ka = 0.0;
-  _shadingValues.Kd = 1.0;
-  _shadingValues.Ks = 0.0;
-  _shadingValues.Kn = 0.0;
-  _shadingValues.Kt = 0.0;
-  _shadingValues.Kr = 0.0;
-  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-  sceneObjects[sceneObjects.size()-1]->setModelView(mat4());
-  }
-
-  
-//  { //Back Wall
-//    sceneObjects.push_back(new Square("Back Wall"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
-//  }
-//  
-//  { //Left Wall
-//    sceneObjects.push_back(new Square("Left Wall"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0,2.0,1.0));
-//  }
-//  
-//  { //Right Wall
-//    sceneObjects.push_back(new Square("Right Wall"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(0.5,0.0,0.5,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0 ));
-//  }
-//  
-//  { //Floor
-//    sceneObjects.push_back(new Square("Floor"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(-90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-//  }
-//  
-//  { //Ceiling
-//    sceneObjects.push_back(new Square("Ceiling"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateX(90)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-//  }
-//  
-//  { //Front Wall
-//    sceneObjects.push_back(new Square("Front Wall"));
-//    Object::ShadingValues _shadingValues;
-//    _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-//    _shadingValues.Ka = 0.0;
-//    _shadingValues.Kd = 1.0;
-//    _shadingValues.Ks = 0.0;
-//    _shadingValues.Kn = 16.0;
-//    _shadingValues.Kt = 0.0;
-//    _shadingValues.Kr = 0.0;
-//    sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//    sceneObjects[sceneObjects.size()-1]->setModelView(RotateY(180)*Translate(0.0, 0.0, -2.0)*Scale(2.0, 2.0, 1.0));
-//  }
-//  
-//  
-//  {
-//  sceneObjects.push_back(new Sphere("Glass sphere"));
-//  Object::ShadingValues _shadingValues;
-//  _shadingValues.color = vec4(1.0,0.0,0.0,1.0);
-//  _shadingValues.Ka = 0.0;
-//  _shadingValues.Kd = 0.0;
-//  _shadingValues.Ks = 0.0;
-//  _shadingValues.Kn = 16.0;
-//  _shadingValues.Kt = 1.0;
-//  _shadingValues.Kr = 1.4;
-//  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(1.0, -1.25, 0.5)*Scale(0.75, 0.75, 0.75));
-//  }
-//  
-//  {
-//  sceneObjects.push_back(new Sphere("Mirrored Sphere"));
-//  Object::ShadingValues _shadingValues;
-//  _shadingValues.color = vec4(1.0,1.0,1.0,1.0);
-//  _shadingValues.Ka = 0.0;
-//  _shadingValues.Kd = 0.0;
-//  _shadingValues.Ks = 1.0;
-//  _shadingValues.Kn = 16.0;
-//  _shadingValues.Kt = 0.0;
-//  _shadingValues.Kr = 0.0;
-//  sceneObjects[sceneObjects.size()-1]->setShadingValues(_shadingValues);
-//  sceneObjects[sceneObjects.size()-1]->setModelView(Translate(-1.0, -1.25, -1.0)*Scale(0.75, 0.75, 0.75));
-//  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -461,14 +538,14 @@ void initGL(){
   GLState::light_ambient  = vec4(lightColor.x, lightColor.y, lightColor.z, 1.0 );
   GLState::light_diffuse  = vec4(lightColor.x, lightColor.y, lightColor.z, 1.0 );
   GLState::light_specular = vec4(lightColor.x, lightColor.y, lightColor.z, 1.0 );
-
+  
   
   std::string vshader = source_path + "/shaders/vshader.glsl";
   std::string fshader = source_path + "/shaders/fshader.glsl";
   
   GLchar* vertex_shader_source = readShaderSource(vshader.c_str());
   GLchar* fragment_shader_source = readShaderSource(fshader.c_str());
-
+  
   GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertex_shader, 1, (const GLchar**) &vertex_shader_source, NULL);
   glCompileShader(vertex_shader);
@@ -489,7 +566,7 @@ void initGL(){
   glUseProgram(GLState::program);
   
   glBindFragDataLocation(GLState::program, 0, "fragColor");
-
+  
   // set up vertex arrays
   GLState::vPosition = glGetAttribLocation( GLState::program, "vPosition" );
   GLState::vNormal = glGetAttribLocation( GLState::program, "vNormal" );
@@ -520,17 +597,17 @@ void initGL(){
     
     glEnableVertexAttribArray( GLState::vNormal );
     glEnableVertexAttribArray( GLState::vPosition );
-
+    
     glVertexAttribPointer( GLState::vPosition, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0) );
     glVertexAttribPointer( GLState::vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vertices_bytes));
-
+    
   }
   
   
-
+  
   glEnable( GL_DEPTH_TEST );
   glShadeModel(GL_SMOOTH);
-
+  
   glClearColor( 0.8, 0.8, 1.0, 1.0 );
   
   //Quaternion trackball variables, you can ignore
@@ -540,11 +617,11 @@ void initGL(){
   GLState::beginx   = 0;
   GLState::beginy   = 0;
   
-  matident(GLState::curmat);
-  trackball(GLState::curquat , 0.0f, 0.0f, 0.0f, 0.0f);
-  trackball(GLState::lastquat, 0.0f, 0.0f, 0.0f, 0.0f);
-  add_quats(GLState::lastquat, GLState::curquat, GLState::curquat);
-  build_rotmatrix(GLState::curmat, GLState::curquat);
+  TrackBall::matident(GLState::curmat);
+  TrackBall::trackball(GLState::curquat , 0.0f, 0.0f, 0.0f, 0.0f);
+  TrackBall::trackball(GLState::lastquat, 0.0f, 0.0f, 0.0f, 0.0f);
+  TrackBall::add_quats(GLState::lastquat, GLState::curquat, GLState::curquat);
+  TrackBall::build_rotmatrix(GLState::curmat, GLState::curquat);
   
   GLState::scalefactor = 1.0;
   GLState::render_line = false;
@@ -618,28 +695,39 @@ int main(void){
   glfwSetKeyCallback(window, keyCallback);
   glfwSetMouseButtonCallback(window, mouseClick);
   glfwSetCursorPosCallback(window, mouseMove);
-
+  
   
   glfwMakeContextCurrent(window);
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
   glfwSwapInterval(1);
   
-  initScene();
+  switch(scene){
+    case _SPHERE:
+      initUnitSphere();
+      break;
+    case _SQUARE:
+      initUnitSquare();
+      break;
+    case _BOX:
+      initCornellBox();
+      break;
+  }
+  
   initGL();
   
   while (!glfwWindowShouldClose(window)){
     
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-
+    
     GLState::window_height = height;
     GLState::window_width  = width;
-
+    
     glViewport(0, 0, width, height);
     
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
     mat4 track_ball =  mat4(GLState::curmat[0][0], GLState::curmat[1][0],
                             GLState::curmat[2][0], GLState::curmat[3][0],
                             GLState::curmat[0][1], GLState::curmat[1][1],
@@ -648,16 +736,25 @@ int main(void){
                             GLState::curmat[2][2], GLState::curmat[3][2],
                             GLState::curmat[0][3], GLState::curmat[1][3],
                             GLState::curmat[2][3], GLState::curmat[3][3]);
- 
-   GLState::sceneModelView  =  Translate(-cameraPosition) *   //Move Camera Back
-                               Translate(GLState::ortho_x, GLState::ortho_y, 0.0) *
-                               track_ball *                   //Rotate Camera
-                               Scale(GLState::scalefactor,
-                                     GLState::scalefactor,
-                                     GLState::scalefactor);   //User Scale
+    
+    GLState::sceneModelView  =  Translate(-cameraPosition) *   //Move Camera Back
+    Translate(GLState::ortho_x, GLState::ortho_y, 0.0) *
+    track_ball *                   //Rotate Camera
+    Scale(GLState::scalefactor,
+          GLState::scalefactor,
+          GLState::scalefactor);   //User Scale
     
     GLfloat aspect = GLfloat(width)/height;
-    GLState::projection = Perspective( 45.0, aspect, 4.5, 100.0 );
+    
+    switch(scene){
+      case _SPHERE:
+      case _SQUARE:
+        GLState::projection = Perspective( 45.0, aspect, 0.01, 100.0 );
+        break;
+      case _BOX:
+        GLState::projection = Perspective( 45.0, aspect, 4.5, 100.0 );
+        break;
+    }
     
     glUniformMatrix4fv( GLState::Projection, 1, GL_TRUE, GLState::projection);
     
