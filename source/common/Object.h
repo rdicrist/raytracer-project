@@ -84,7 +84,7 @@ public:
   virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w);
   
 private:
-  double sphereIntersect(vec4 p0, vec4 V, vec4 O=vec4(0.0, 0.0, 0.0, 1.0), double r=1.0);
+  double raySphereIntersection(vec4 p0, vec4 V, vec4 O=vec4(0.0, 0.0, 0.0, 1.0), double r=1.0);
   
 };
 
@@ -123,7 +123,7 @@ public:
   virtual IntersectionValues intersect(vec4 p0_w, vec4 V_w);
   
 private:
-  double squareIntersect(vec4 p0, vec4 V);
+  double raySquareIntersection(vec4 p0, vec4 V);
   
 };
 #endif /* defined(__OBJECT_H__) */

@@ -18,7 +18,7 @@ Object::IntersectionValues Sphere::intersect(vec4 p0_w, vec4 V_w){
 
 /* -------------------------------------------------------------------------- */
 /* ------ Ray = p0 + t*V  sphere at origin O and radius r    : Find t ------- */
-double Sphere::sphereIntersect(vec4 p0, vec4 V, vec4 O, double r){
+double Sphere::raySphereIntersection(vec4 p0, vec4 V, vec4 O, double r){
   double t   = std::numeric_limits< double >::infinity();
   //TODO: Ray-sphere intersection;
   return t;
@@ -35,7 +35,7 @@ Object::IntersectionValues Square::intersect(vec4 p0_w, vec4 V_w){
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
-double Square::squareIntersect(vec4 p0, vec4 V){
+double Square::raySquareIntersection(vec4 p0, vec4 V){
   double t   = std::numeric_limits< double >::infinity();
   //TODO: Ray-square intersection;
   return t;
