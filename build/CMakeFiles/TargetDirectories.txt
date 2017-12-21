@@ -1,0 +1,8 @@
+/Users/rickidicristoforo/raytracing_template/build/CMakeFiles/raytracer.dir
+/Users/rickidicristoforo/raytracing_template/build/CMakeFiles/glad.dir
+/Users/rickidicristoforo/raytracing_template/build/CMakeFiles/ALL_BUILD.dir
+/Users/rickidicristoforo/raytracing_template/build/CMakeFiles/ZERO_CHECK.dir
+/Users/rickidicristoforo/raytracing_template/build/glfw-3.2/CMakeFiles/ALL_BUILD.dir
+/Users/rickidicristoforo/raytracing_template/build/glfw-3.2/CMakeFiles/ZERO_CHECK.dir
+/Users/rickidicristoforo/raytracing_template/build/glfw-3.2/src/CMakeFiles/glfw.dir
+/Users/rickidicristoforo/raytracing_template/build/pngdecode/CMakeFiles/pngdecode.dir
